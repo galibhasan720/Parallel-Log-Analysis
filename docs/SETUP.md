@@ -32,7 +32,7 @@ Then: `wsl --shutdown` and reopen Ubuntu.
 5. Node 20 LTS via nvm (host currently has Node v24 — use nvm `20` inside WSL for the frontend)
 6. Ollama: install on Windows **or** WSL (pick one host). Pull `llama3.2:3b` (fallback `phi3:mini`)
 
-Do **not** install FastAPI / React app packages until Day 2+.
+Day 5+ Python deps (FastAPI / SQLAlchemy / PyJWT) are in `requirements.txt`. React packages wait until Day 6.
 
 ## Dataset path
 
@@ -86,3 +86,28 @@ node -v
 ```
 
 Windows `.venv` (3.12.10) is already at the repo root for local scripts. Prefer a **WSL venv** for Day 2+ multiprocessing so behavior matches Linux servers.
+
+## Day 5 — API (System B)
+
+HPC CLI (System A) does not need FastAPI. The product layer does:
+
+```powershell
+# repo root, Python 3.12 venv
+pip install -r requirements.txt
+$env:PYTHONPATH = "backend"
+$env:JWT_SECRET = "set-a-real-secret-before-demo"
+python backend/scripts/reset_db.py
+uvicorn app.main:app --reload --app-dir backend --host 127.0.0.1 --port 8000
+```
+
+- Docs: http://127.0.0.1:8000/docs  
+- DB file: `backend/data/app.db` (gitignored)  
+- Uploads: `backend/data/uploads/` (gitignored; jobs use dataset IDs, never client paths)  
+- Dev default `JWT_SECRET` is `dev-only-change-me` — override via env.
+
+Manual DoD: register → login → upload `synth_10mb.log` → `POST /api/jobs` → poll → `GET /api/jobs/{id}/results`. Then confirm CLI still works:
+
+```powershell
+$env:PYTHONPATH = "backend"
+python -m hpc_engine.analyze --input data/samples/synth_small.log --mode sequential
+```
