@@ -7,6 +7,7 @@ import json
 import sys
 from pathlib import Path
 
+from app.hpc.engines.finalize import finalize_analysis
 from app.hpc.engines.parallel import analyze_file_parallel
 from app.hpc.engines.sequential import analyze_file
 
@@ -49,7 +50,7 @@ def main(argv: list[str] | None = None) -> int:
             parser_name=parser_name,
         )
 
-    print(json.dumps(result, indent=2, sort_keys=True))
+    print(json.dumps(finalize_analysis(result), indent=2, sort_keys=True))
     return 0
 
 

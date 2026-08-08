@@ -12,15 +12,17 @@
 
 ## Detection heuristics (deterministic)
 
-| Pattern | Signal |
-| ------- | ------ |
-| Authentication burst | > X failures from same IP within Y minutes |
-| HTTP error spike | 5xx rate > baseline |
-| Suspicious access | Many endpoints from one IP in a short window |
-| Scanning | Many 404s across many paths |
-| Sensitive paths | `/admin`, `/.env`, `/config` |
+Implemented in `backend/app/security/heuristics.py`. Thresholds:
 
-Produce: Finding, Severity, Evidence, Timestamp, Source, Count.
+| Pattern | Signal | Stage 1 threshold |
+| ------- | ------ | ----------------- |
+| Authentication burst | Failures from same IP (status 401 or "Failed password") | total >= 40 **or** any minute >= 15 |
+| HTTP error spike | 5xx / valid records | rate > 0.15 |
+| Suspicious access | Distinct endpoints from one IP | >= 6 paths |
+| Scanning | 404s from one IP across many paths | >= 20 404s and >= 4 paths |
+| Sensitive paths | `/admin`, `/.env`, `/config` | total hits >= 10 |
+
+Produce: Finding, Severity, Evidence, Source IPs, Count.
 
 Avoid: “This is definitely an attack.”  
 Prefer: “Potential brute-force activity detected.”

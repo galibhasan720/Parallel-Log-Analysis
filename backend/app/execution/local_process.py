@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.hpc.engines.finalize import finalize_analysis
 from app.hpc.engines.parallel import analyze_file_parallel
 from app.hpc.engines.sequential import analyze_file
 
@@ -21,9 +22,11 @@ class LocalProcessBackend(ExecutionBackend):
         parser_name = None if fmt in (None, "auto") else str(fmt)
 
         if mode == "parallel":
-            return analyze_file_parallel(
+            result = analyze_file_parallel(
                 str(path),
                 workers=workers,
                 parser_name=parser_name,
             )
-        return analyze_file(str(path), parser_name=parser_name, worker_id=0)
+        else:
+            result = analyze_file(str(path), parser_name=parser_name, worker_id=0)
+        return finalize_analysis(result)
