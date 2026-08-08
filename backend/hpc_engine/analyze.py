@@ -7,6 +7,7 @@ import json
 import sys
 from pathlib import Path
 
+from app.hpc.engines.parallel import analyze_file_parallel
 from app.hpc.engines.sequential import analyze_file
 
 
@@ -18,7 +19,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--format",
         default="auto",
-        help="Parser name (default: auto-detect). Day 2: application",
+        help="Parser name (default: auto-detect). Stage 1: application",
     )
     args = parser.parse_args(argv)
 
@@ -27,22 +28,27 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: log file not found: {path}", file=sys.stderr)
         return 2
 
-    if args.mode == "parallel":
-        print(
-            "error: --mode parallel is Day 3. Use --mode sequential for the baseline.",
-            file=sys.stderr,
-        )
+    if args.workers < 1:
+        print("error: --workers must be >= 1", file=sys.stderr)
         return 2
 
-    if args.workers != 1:
-        print(
-            "warning: sequential mode ignores --workers other than 1 "
-            f"(got {args.workers}); Day 3 will use ProcessPool.",
-            file=sys.stderr,
+    parser_name = None if args.format == "auto" else args.format
+
+    if args.mode == "sequential":
+        if args.workers != 1:
+            print(
+                "warning: sequential mode uses a single worker "
+                f"(--workers {args.workers} ignored).",
+                file=sys.stderr,
+            )
+        result = analyze_file(str(path), parser_name=parser_name, worker_id=0)
+    else:
+        result = analyze_file_parallel(
+            str(path),
+            workers=args.workers,
+            parser_name=parser_name,
         )
 
-    parser_name = None if args.format == "auto" else args.format
-    result = analyze_file(str(path), parser_name=parser_name, worker_id=0)
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0
 
