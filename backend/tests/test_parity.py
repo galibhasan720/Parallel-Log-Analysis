@@ -12,10 +12,18 @@ _COMPARE_KEYS = (
     "records_processed",
     "valid_records",
     "invalid_records",
+    "count_5xx",
     "level_counts",
     "status_counts",
     "error_patterns",
     "service_counts",
+    "path_counts",
+    "ip_counts",
+    "auth_fail_by_ip",
+    "not_found_by_ip",
+    "sensitive_path_counts",
+    "paths_by_ip",
+    "auth_fail_by_ip_minute",
 )
 
 
