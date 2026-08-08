@@ -20,6 +20,8 @@ npm-debug.log*
 # Local data / secrets
 backend/data/*.db
 backend/data/*.db-journal
+backend/data/uploads/*
+!backend/data/uploads/.gitkeep
 .env
 .env.local
 *.pem

@@ -50,6 +50,9 @@ pip install -r requirements.txt
 
 # HPC engine (System A) — independent of the web stack
 python -m hpc_engine.analyze --input data/samples/synth_small.log --workers 4 --mode parallel
+
+# Product layer (System B, Day 5+)
+uvicorn app.main:app --reload --app-dir backend --host 127.0.0.1 --port 8000
 ```
 
 Large datasets live on `E:\datasets\log-intelligence\`, not in git.
