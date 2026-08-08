@@ -1,0 +1,11 @@
+# Pin exact versions after first successful install.
+pytest>=8.0
+# ruff
+
+# Day 5+:
+# fastapi>=0.115
+# uvicorn[standard]>=0.32
+# sqlalchemy>=2.0
+# pydantic>=2.0
+# python-multipart
+# httpx

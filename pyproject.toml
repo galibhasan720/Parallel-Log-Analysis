@@ -1,0 +1,15 @@
+[project]
+name = "parallel-log-intelligence"
+version = "0.1.0"
+description = "CPU-parallel log analytics platform (Stage 1 HPC prototype)"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Galib Hasan" }]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100

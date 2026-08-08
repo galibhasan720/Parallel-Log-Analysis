@@ -1,0 +1,10 @@
+{
+  "name": "parallel-log-intelligence-web",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Stage 1 React dashboard — scaffold only until Day 6",
+  "scripts": {
+    "dev": "echo \"Frontend starts on Day 6\"",
+    "build": "echo \"Frontend starts on Day 6\""
+  }
+}
