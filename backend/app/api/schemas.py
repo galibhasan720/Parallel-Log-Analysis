@@ -103,3 +103,9 @@ class CapabilitiesOut(BaseModel):
     modes: list[str]
     parser_version: str
     analysis_version: str
+
+
+class AiSummaryOut(BaseModel):
+    ai_report: str | None = None
+    ollama_available: bool
+    detail: str | None = None

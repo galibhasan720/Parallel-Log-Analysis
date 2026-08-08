@@ -1,5 +1,5 @@
-# Minimal Day 1 placeholder. Expand on Day 6 (ruff + pytest + frontend build).
-# Do not run 1 GB benchmarks in CI.
+# pytest on synth_small only + frontend production build.
+# Do not run 10/100/500 MB benchmarks in CI.
 
 name: ci
 
@@ -10,12 +10,36 @@ on:
     branches: [main]
 
 jobs:
-  placeholder:
+  backend:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
     steps:
       - uses: actions/checkout@v4
-      - name: Day 1 scaffold check
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python deps
+        run: pip install -r requirements.txt
+      - name: Pytest
+        env:
+          PYTHONPATH: backend
+        run: python -m pytest backend/tests -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install and build
         run: |
-          test -f README.md
-          test -d backend/hpc_engine
-          test -d docs/architecture
+          npm ci
+          npm run build

@@ -32,7 +32,7 @@ Then: `wsl --shutdown` and reopen Ubuntu.
 5. Node 20 LTS via nvm (host currently has Node v24 — use nvm `20` inside WSL for the frontend)
 6. Ollama: install on Windows **or** WSL (pick one host). Pull `llama3.2:3b` (fallback `phi3:mini`)
 
-Day 5+ Python deps (FastAPI / SQLAlchemy / PyJWT) are in `requirements.txt`. React packages wait until Day 6.
+Day 5+ Python deps (FastAPI / SQLAlchemy / PyJWT) are in `requirements.txt`. Day 6 React deps: `cd frontend && npm install`.
 
 ## Dataset path
 
@@ -111,3 +111,19 @@ Manual DoD: register → login → upload `synth_10mb.log` → `POST /api/jobs` 
 $env:PYTHONPATH = "backend"
 python -m hpc_engine.analyze --input data/samples/synth_small.log --mode sequential
 ```
+
+## Day 6 — React UI + Ollama
+
+Keep uvicorn running, then in another terminal:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+UI: http://127.0.0.1:5173 (Vite proxies `/api` → `http://127.0.0.1:8000`).
+
+Ollama (already pulled Day 1): `llama3.2:3b` on `http://127.0.0.1:11434`. Override with `OLLAMA_HOST` / `OLLAMA_MODEL`. If Ollama is down, **Generate AI Report** returns 503 and the UI shows a fallback — the API does not crash.
+
+**Benchmark hygiene:** stop Vite + Ollama during official HPC timed runs (`run_benchmarks.py`).
