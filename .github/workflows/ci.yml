@@ -1,0 +1,21 @@
+# Minimal Day 1 placeholder. Expand on Day 6 (ruff + pytest + frontend build).
+# Do not run 1 GB benchmarks in CI.
+
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Day 1 scaffold check
+        run: |
+          test -f README.md
+          test -d backend/hpc_engine
+          test -d docs/architecture
