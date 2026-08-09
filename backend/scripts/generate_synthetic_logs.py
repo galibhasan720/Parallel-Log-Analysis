@@ -88,26 +88,46 @@ def main() -> int:
         default=str(Path(__file__).resolve().parents[2] / "data" / "samples"),
         help="Tiny sample committed to git (<2 MB)",
     )
+    parser.add_argument(
+        "--also-500mb",
+        action="store_true",
+        help="Generate only synth_500mb.log (does not regenerate small/10/100).",
+    )
     args = parser.parse_args()
     out_dir = Path(args.out_dir)
     sample_dir = Path(args.sample_dir)
 
-    specs = [
-        (sample_dir / "synth_small.log", 256 * 1024, 1),
-        (out_dir / "synth_10mb.log", 10 * 1024 * 1024, 10),
-        (out_dir / "synth_100mb.log", 100 * 1024 * 1024, 100),
-    ]
+    if args.also_500mb:
+        specs = [(out_dir / "synth_500mb.log", 500 * 1024 * 1024, 500)]
+    else:
+        specs = [
+            (sample_dir / "synth_small.log", 256 * 1024, 1),
+            (out_dir / "synth_10mb.log", 10 * 1024 * 1024, 10),
+            (out_dir / "synth_100mb.log", 100 * 1024 * 1024, 100),
+        ]
     results = [write_file(path, size, seed) for path, size, seed in specs]
     for row in results:
         print(
             f"{row['path']}\n  size={row['size_bytes']} lines={row['lines']} sha256={row['sha256']}"
         )
     manifest = out_dir / "MANIFEST.txt"
-    with manifest.open("w", encoding="utf-8") as fh:
-        for row in results:
-            fh.write(
-                f"{os.path.basename(row['path'])}\t{row['size_bytes']}\t{row['lines']}\t{row['sha256']}\n"
-            )
+    if args.also_500mb and manifest.is_file():
+        existing = manifest.read_text(encoding="utf-8")
+        with manifest.open("a", encoding="utf-8") as fh:
+            for row in results:
+                line = (
+                    f"{os.path.basename(row['path'])}\t{row['size_bytes']}\t"
+                    f"{row['lines']}\t{row['sha256']}\n"
+                )
+                if os.path.basename(row["path"]) not in existing:
+                    fh.write(line)
+    else:
+        with manifest.open("w", encoding="utf-8") as fh:
+            for row in results:
+                fh.write(
+                    f"{os.path.basename(row['path'])}\t{row['size_bytes']}\t"
+                    f"{row['lines']}\t{row['sha256']}\n"
+                )
     return 0
 
 

@@ -13,6 +13,7 @@ License: original synthetic data for this academic project.
 | `synth_small.log` | `data/samples/synth_small.log` | 262,218 (~256 KB) | 2,258 | `56839bf2405bf496efab85787aaf41f2b4064aa391d9441b19b8df9b11e15217` |
 | `synth_10mb.log` | `E:\datasets\log-intelligence\generated\synth_10mb.log` | 10,485,804 | 90,161 | `5439df3ac117da814aed64730377886e04bfe15d0e8855e2a857e99ecf15015d` |
 | `synth_100mb.log` | `E:\datasets\log-intelligence\generated\synth_100mb.log` | 104,857,682 | 901,610 | `dc166b092e20addf748e8434246b67a0906d9cf52a01298bfc3007d7e01c5b3b` |
+| `synth_500mb.log` | `E:\datasets\log-intelligence\generated\synth_500mb.log` | 524,288,079 | 4,508,066 | `d5555fbc9e88e2eda1ec98c9a77d48615ae59f9ca48cfe67feccdd742282247f` |
 
 Spot-check (first lines of `synth_small.log`):
 
@@ -37,4 +38,4 @@ Download any public set to `E:\datasets\log-intelligence\raw\` and record licens
 
 - Do not commit secrets, real emails, or production credentials.
 - Sanitize IPs if faculty ethics rules require it.
-- `synth_500mb.log` / `synth_1gb.log` can be generated later for Day 7 stretch scaling.
+- `synth_1gb.log` is optional stretch; not generated for Stage 1. Re-generate 500 MB only with `--also-500mb` (do not rewrite small/10/100).
