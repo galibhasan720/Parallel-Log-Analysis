@@ -53,6 +53,10 @@ python -m hpc_engine.analyze --input data/samples/synth_small.log --workers 4 --
 
 # Product layer (System B, Day 5+)
 uvicorn app.main:app --reload --app-dir backend --host 127.0.0.1 --port 8000
+
+# React UI (Day 6+) — second terminal
+cd frontend && npm install && npm run dev
+# http://127.0.0.1:5173  (proxies /api → :8000)
 ```
 
 Large datasets live on `E:\datasets\log-intelligence\`, not in git.

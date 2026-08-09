@@ -1,6 +1,6 @@
 # Demo Script (≤ 5 minutes)
 
-_Fill screenshots into `docs/images/` on Day 6–7._
+_Fill screenshots into `docs/images/` on Day 6–7 dry-run. Do not invent images._
 
 1. **Problem (20 s)** — Large logs, sequential analysis is slow; HPC is the primary engine.
 2. **Architecture (40 s)** — System A CLI vs System B product layer; four abstractions.

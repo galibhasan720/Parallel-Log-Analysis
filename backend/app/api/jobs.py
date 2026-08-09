@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.ai.ollama import OllamaUnavailable, build_prompt, generate_summary
 from app.api.schemas import (
+    AiSummaryOut,
     AnalysisResultOut,
     JobCreateOut,
     JobCreateRequest,
@@ -77,6 +81,17 @@ def create_job(
     return JobCreateOut(job_id=job.id, status=job.status)
 
 
+@router.get("", response_model=list[JobStatusOut])
+def list_jobs(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[JobStatusOut]:
+    rows = db.scalars(
+        select(LogJob).where(LogJob.user_id == user.id).order_by(LogJob.id.desc())
+    ).all()
+    return [_job_out(job) for job in rows]
+
+
 @router.get("/{job_id}", response_model=JobStatusOut)
 def get_job(
     job_id: int,
@@ -135,13 +150,31 @@ def get_results(
     )
 
 
-@router.post("/{job_id}/ai-summary", status_code=status.HTTP_501_NOT_IMPLEMENTED)
+@router.post("/{job_id}/ai-summary", response_model=AiSummaryOut)
 def ai_summary(
     job_id: int,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> dict:
+) -> AiSummaryOut | JSONResponse:
     job = db.get(LogJob, job_id)
     if job is None or job.user_id != user.id:
         raise HTTPException(status_code=404, detail="Job not found")
-    return {"detail": "AI summary is Day 6 (Ollama)."}
+    if job.status != "completed" or job.result is None:
+        raise HTTPException(status_code=404, detail="Results not ready")
+    result = job.result
+    findings = (result.security_json or {}).get("findings") or []
+    prompt = build_prompt(result.summary_json, result.errors_json, findings)
+    try:
+        report = generate_summary(prompt)
+    except OllamaUnavailable as exc:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "detail": f"Ollama unavailable: {exc}",
+                "ollama_available": False,
+                "ai_report": None,
+            },
+        )
+    result.ai_report = report
+    db.commit()
+    return AiSummaryOut(ai_report=report, ollama_available=True)

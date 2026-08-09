@@ -65,8 +65,9 @@ def test_upload_job_results_and_reproducibility(api_client, auth_headers) -> Non
     cancel_done = api_client.post(f"/api/jobs/{job_id}/cancel", headers=auth_headers)
     assert cancel_done.status_code == 409
 
-    ai = api_client.post(f"/api/jobs/{job_id}/ai-summary", headers=auth_headers)
-    assert ai.status_code == 501
+    listed = api_client.get("/api/jobs", headers=auth_headers)
+    assert listed.status_code == 200
+    assert any(item["job_id"] == job_id for item in listed.json())
 
 
 def test_parallel_job_matches_flow(api_client, auth_headers) -> None:
