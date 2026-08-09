@@ -1,0 +1,19 @@
+{
+  "kind": "worker_matrix_summary",
+  "file": "E:\\datasets\\log-intelligence\\generated\\synth_500mb.log",
+  "size_bytes": 524288079,
+  "records_processed": 4508066,
+  "machine": "Intel Core i5-1235U 12 logical processors",
+  "os": "Windows 10",
+  "measured_at": "20260809T000800Z",
+  "warmup_discarded": true,
+  "timed_runs": 3,
+  "rows": [
+    {"workers": 1, "runs_s": [42.073, 45.822, 43.300], "mean_s": 43.732, "speedup": 1.0, "efficiency": 1.0},
+    {"workers": 2, "runs_s": [34.187, 32.971, 34.047], "mean_s": 33.735, "speedup": 1.30, "efficiency": 0.65},
+    {"workers": 4, "runs_s": [23.990, 24.377, 24.874], "mean_s": 24.414, "speedup": 1.79, "efficiency": 0.45},
+    {"workers": 6, "runs_s": [20.762, 20.107, 20.495], "mean_s": 20.455, "speedup": 2.14, "efficiency": 0.36},
+    {"workers": 8, "runs_s": [17.926, 17.827, 18.088], "mean_s": 17.947, "speedup": 2.44, "efficiency": 0.30},
+    {"workers": 12, "runs_s": [18.403, 16.709, 16.748], "mean_s": 17.287, "speedup": 2.53, "efficiency": 0.21}
+  ]
+}

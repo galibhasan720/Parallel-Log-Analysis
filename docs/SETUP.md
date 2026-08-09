@@ -127,3 +127,19 @@ UI: http://127.0.0.1:5173 (Vite proxies `/api` → `http://127.0.0.1:8000`).
 Ollama (already pulled Day 1): `llama3.2:3b` on `http://127.0.0.1:11434`. Override with `OLLAMA_HOST` / `OLLAMA_MODEL`. If Ollama is down, **Generate AI Report** returns 503 and the UI shows a fallback — the API does not crash.
 
 **Benchmark hygiene:** stop Vite + Ollama during official HPC timed runs (`run_benchmarks.py`).
+
+## Day 7 — Backup (before faculty demo)
+
+Do **not** commit `app.db` or large logs. Copy locally:
+
+```powershell
+New-Item -ItemType Directory -Force E:\backups | Out-Null
+if (Test-Path backend\data\app.db) {
+  Copy-Item backend\data\app.db E:\backups\app.db -Force
+}
+if (Test-Path E:\datasets\log-intelligence\generated\MANIFEST.txt) {
+  Copy-Item E:\datasets\log-intelligence\generated\MANIFEST.txt E:\backups\MANIFEST.txt -Force
+}
+```
+
+500 MB file (not in git): `E:\datasets\log-intelligence\generated\synth_500mb.log` — generate with `python backend/scripts/generate_synthetic_logs.py --also-500mb` if missing.
