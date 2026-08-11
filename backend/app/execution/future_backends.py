@@ -1,18 +1,13 @@
-"""Future execution backends (not implemented in Stage 1)."""
+"""Future stubs kept for roadmap; Stage 2 implements MPI/OpenMP in dedicated modules."""
 
 from typing import Any
 
 from .base import ExecutionBackend
 
 
-class MPIBackend(ExecutionBackend):
-    def execute(self, job_spec: dict[str, Any]) -> dict[str, Any]:
-        raise NotImplementedError("Stage 3+ distributed HPC")
-
-
 class DistributedBackend(ExecutionBackend):
     def execute(self, job_spec: dict[str, Any]) -> dict[str, Any]:
-        raise NotImplementedError("Stage 3+ distributed workers")
+        raise NotImplementedError("Multi-node distributed workers — future stage")
 
 
 class StreamingBackend(ExecutionBackend):

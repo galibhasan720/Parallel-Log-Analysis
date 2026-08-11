@@ -8,6 +8,8 @@ export type JobStatus = {
   processing_mode?: string | null;
   worker_count?: number | null;
   execution_backend?: string | null;
+  schedule?: string | null;
+  chunks_per_worker?: number | null;
   parser_version?: string | null;
   analysis_version?: string | null;
   configuration_hash?: string | null;
@@ -27,10 +29,13 @@ export type Dataset = {
 
 export type Capabilities = {
   execution_backend: string;
+  execution_backends?: string[];
+  backend_status?: Record<string, { available?: boolean; detail?: string }>;
   max_workers: number;
   max_upload_bytes: number;
   parsers: string[];
   modes: string[];
+  schedules?: string[];
   parser_version: string;
   analysis_version: string;
 };
@@ -140,7 +145,15 @@ export const api = {
   },
   jobs: () => request<JobStatus[]>("/api/jobs"),
   job: (id: number) => request<JobStatus>(`/api/jobs/${id}`),
-  createJob: (body: { dataset_id: number; mode: string; workers: number; format?: string }) =>
+  createJob: (body: {
+    dataset_id: number;
+    mode: string;
+    workers: number;
+    format?: string;
+    execution_backend?: string;
+    schedule?: string;
+    chunks_per_worker?: number;
+  }) =>
     request<{ job_id: number; status: string }>("/api/jobs", {
       method: "POST",
       body: JSON.stringify(body),
@@ -151,7 +164,15 @@ export const api = {
       `/api/jobs/${id}/ai-summary`,
       { method: "POST" },
     ),
-  createBenchmark: (body: { dataset_id: number; workers: number[]; runs: number; format?: string }) =>
+  createBenchmark: (body: {
+    dataset_id: number;
+    workers: number[];
+    runs: number;
+    format?: string;
+    execution_backend?: string;
+    schedule?: string;
+    chunks_per_worker?: number;
+  }) =>
     request<{ job_id: number; status: string }>("/api/benchmarks", {
       method: "POST",
       body: JSON.stringify(body),

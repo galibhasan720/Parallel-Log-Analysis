@@ -14,6 +14,8 @@ License: original synthetic data for this academic project.
 | `synth_10mb.log` | `E:\datasets\log-intelligence\generated\synth_10mb.log` | 10,485,804 | 90,161 | `5439df3ac117da814aed64730377886e04bfe15d0e8855e2a857e99ecf15015d` |
 | `synth_100mb.log` | `E:\datasets\log-intelligence\generated\synth_100mb.log` | 104,857,682 | 901,610 | `dc166b092e20addf748e8434246b67a0906d9cf52a01298bfc3007d7e01c5b3b` |
 | `synth_500mb.log` | `E:\datasets\log-intelligence\generated\synth_500mb.log` | 524,288,079 | 4,508,066 | `d5555fbc9e88e2eda1ec98c9a77d48615ae59f9ca48cfe67feccdd742282247f` |
+| `synth_50mb.log` | `E:\datasets\log-intelligence\generated\synth_50mb.log` | 52,428,912 | 450,748 | `41883ed9ffd05f60be640d795302b0f64e24298abbdd76027136dc5c99e311a5` |
+| `synth_200mb.log` | `E:\datasets\log-intelligence\generated\synth_200mb.log` | 209,715,296 | 1,803,169 | `ed88f0b731979c38c0fe390f66e178a614febf346a4910cc38e5bdb694e76dcd` |
 
 Spot-check (first lines of `synth_small.log`):
 

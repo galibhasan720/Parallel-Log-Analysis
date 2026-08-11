@@ -1,4 +1,4 @@
-"""Local job runner (Stage 1 prototype). FastAPI starts it; HPC stays independent."""
+"""Local job runner. FastAPI starts it; HPC stays behind ExecutionBackend."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from typing import Any
 
 from app.db.models import AnalysisResult, BenchmarkRun, Dataset, LogJob, utcnow
 from app.db.session import get_session_factory
-from app.execution.local_process import LocalProcessBackend
+from app.execution.registry import get_backend
 from app.jobs.results import split_finalize
 
 # ("analysis", job_id) or ("benchmark", job_id, worker_counts, runs)
@@ -18,7 +18,6 @@ _cancel_ids: set[int] = set()
 _cancel_lock = threading.Lock()
 _worker_lock = threading.Lock()
 _worker_started = False
-_backend = LocalProcessBackend()
 
 
 def reset_worker_state() -> None:
@@ -97,6 +96,12 @@ def _fail_job(job_id: int, message: str) -> None:
         db.close()
 
 
+def _default_chunks() -> int:
+    import os
+
+    return int(os.environ.get("CHUNKS_PER_WORKER", "8"))
+
+
 def _run_analysis(job_id: int) -> None:
     db = _session()
     try:
@@ -114,6 +119,9 @@ def _run_analysis(job_id: int) -> None:
         mode = job.processing_mode
         workers = job.worker_count
         fmt = dataset.format
+        backend_name = job.execution_backend or "process"
+        schedule = job.schedule or "static"
+        chunks = job.chunks_per_worker if job.chunks_per_worker is not None else _default_chunks()
         job.status = "running"
         db.commit()
     finally:
@@ -128,8 +136,11 @@ def _run_analysis(job_id: int) -> None:
         "mode": mode,
         "workers": workers,
         "format": fmt,
+        "schedule": schedule,
+        "chunks_per_worker": chunks,
     }
-    result = _backend.execute(spec)
+    backend = get_backend(backend_name)
+    result = backend.execute(spec)
 
     db = _session()
     try:
@@ -177,11 +188,15 @@ def _run_benchmark(job_id: int, worker_counts: list[int], runs: int) -> None:
             return
         stored_path = dataset.stored_path
         fmt = dataset.format
+        backend_name = job.execution_backend or "process"
+        schedule = job.schedule or "static"
+        chunks = job.chunks_per_worker if job.chunks_per_worker is not None else _default_chunks()
         job.status = "running"
         db.commit()
     finally:
         db.close()
 
+    backend = get_backend(backend_name)
     for workers in worker_counts:
         if is_cancelled(job_id):
             _fail_job(job_id, "cancelled")
@@ -189,12 +204,14 @@ def _run_benchmark(job_id: int, worker_counts: list[int], runs: int) -> None:
         mode = "sequential" if workers <= 1 else "parallel"
         for run_number in range(1, runs + 1):
             start = time.perf_counter()
-            result = _backend.execute(
+            result = backend.execute(
                 {
                     "input": stored_path,
                     "mode": mode,
                     "workers": max(workers, 1),
                     "format": fmt,
+                    "schedule": schedule,
+                    "chunks_per_worker": chunks,
                 }
             )
             elapsed = time.perf_counter() - start
@@ -212,7 +229,7 @@ def _run_benchmark(job_id: int, worker_counts: list[int], runs: int) -> None:
                         throughput_lines_per_sec=throughput,
                         cpu_percent_avg=None,
                         mem_mb_peak=None,
-                        notes=None,
+                        notes=backend_name,
                     )
                 )
                 db.commit()

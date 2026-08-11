@@ -41,5 +41,6 @@ def test_capabilities_public(api_client) -> None:
     response = api_client.get("/api/system/capabilities")
     assert response.status_code == 200
     body = response.json()
-    assert body["execution_backend"] == "local_process"
+    assert body["execution_backend"] in ("process", "local_process")
+    assert "process" in body.get("execution_backends", ["process"])
     assert "application" in body["parsers"]

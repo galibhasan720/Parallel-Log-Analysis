@@ -93,12 +93,22 @@ def main() -> int:
         action="store_true",
         help="Generate only synth_500mb.log (does not regenerate small/10/100).",
     )
+    parser.add_argument(
+        "--weak-scaling",
+        action="store_true",
+        help="Generate synth_50mb.log and synth_200mb.log for weak scaling.",
+    )
     args = parser.parse_args()
     out_dir = Path(args.out_dir)
     sample_dir = Path(args.sample_dir)
 
     if args.also_500mb:
         specs = [(out_dir / "synth_500mb.log", 500 * 1024 * 1024, 500)]
+    elif args.weak_scaling:
+        specs = [
+            (out_dir / "synth_50mb.log", 50 * 1024 * 1024, 50),
+            (out_dir / "synth_200mb.log", 200 * 1024 * 1024, 200),
+        ]
     else:
         specs = [
             (sample_dir / "synth_small.log", 256 * 1024, 1),
@@ -111,7 +121,7 @@ def main() -> int:
             f"{row['path']}\n  size={row['size_bytes']} lines={row['lines']} sha256={row['sha256']}"
         )
     manifest = out_dir / "MANIFEST.txt"
-    if args.also_500mb and manifest.is_file():
+    if (args.also_500mb or args.weak_scaling) and manifest.is_file():
         existing = manifest.read_text(encoding="utf-8")
         with manifest.open("a", encoding="utf-8") as fh:
             for row in results:

@@ -55,6 +55,8 @@ class LogJob(Base):
     processing_mode: Mapped[str] = mapped_column(String(32))
     worker_count: Mapped[int] = mapped_column(Integer, default=1)
     execution_backend: Mapped[str] = mapped_column(String(64), default="local_process")
+    schedule: Mapped[str | None] = mapped_column(String(32), nullable=True, default="static")
+    chunks_per_worker: Mapped[int | None] = mapped_column(Integer, nullable=True)
     parser_version: Mapped[str] = mapped_column(String(64))
     analysis_version: Mapped[str] = mapped_column(String(64))
     configuration_hash: Mapped[str] = mapped_column(String(64))
