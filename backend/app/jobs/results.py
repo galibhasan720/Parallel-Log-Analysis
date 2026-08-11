@@ -14,14 +14,19 @@ def configuration_hash(
     mode: str,
     workers: int,
     fmt: str | None,
+    backend: str | None = None,
+    schedule: str | None = None,
+    chunks_per_worker: int | None = None,
 ) -> str:
     payload = {
-        "execution_backend": settings.execution_backend,
+        "execution_backend": backend or settings.execution_backend,
         "parser_version": settings.parser_version,
         "analysis_version": settings.analysis_version,
         "mode": mode,
         "workers": workers,
         "format": fmt or "auto",
+        "schedule": schedule or "static",
+        "chunks_per_worker": chunks_per_worker,
     }
     blob = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()

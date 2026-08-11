@@ -36,6 +36,9 @@ class JobCreateRequest(BaseModel):
     mode: str = "sequential"
     workers: int = 1
     format: str | None = None
+    execution_backend: str | None = None
+    schedule: str | None = None
+    chunks_per_worker: int | None = None
 
 
 class JobStatusOut(BaseModel):
@@ -45,6 +48,8 @@ class JobStatusOut(BaseModel):
     processing_mode: str | None = None
     worker_count: int | None = None
     execution_backend: str | None = None
+    schedule: str | None = None
+    chunks_per_worker: int | None = None
     parser_version: str | None = None
     analysis_version: str | None = None
     configuration_hash: str | None = None
@@ -67,6 +72,8 @@ class AnalysisResultOut(BaseModel):
     evidence: dict
     ai_report: str | None = None
     execution_backend: str
+    schedule: str | None = None
+    chunks_per_worker: int | None = None
     parser_version: str
     analysis_version: str
     configuration_hash: str
@@ -77,6 +84,9 @@ class BenchmarkCreateRequest(BaseModel):
     workers: list[int] = Field(default_factory=lambda: [1, 2, 4])
     runs: int = 1
     format: str | None = None
+    execution_backend: str | None = None
+    schedule: str | None = None
+    chunks_per_worker: int | None = None
 
 
 class BenchmarkRowOut(BaseModel):
@@ -97,10 +107,13 @@ class BenchmarkOut(BaseModel):
 
 class CapabilitiesOut(BaseModel):
     execution_backend: str
+    execution_backends: list[str]
+    backend_status: dict
     max_workers: int
     max_upload_bytes: int
     parsers: list[str]
     modes: list[str]
+    schedules: list[str]
     parser_version: str
     analysis_version: str
 

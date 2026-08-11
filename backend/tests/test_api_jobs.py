@@ -48,7 +48,7 @@ def test_upload_job_results_and_reproducibility(api_client, auth_headers) -> Non
 
     job = _wait_job(api_client, auth_headers, job_id)
     assert job["status"] == "completed", job
-    assert job["execution_backend"] == "local_process"
+    assert job["execution_backend"] in ("process", "local_process", "dynamic", "mpi", "openmp")
     assert job["parser_version"]
     assert job["analysis_version"]
     assert len(job["configuration_hash"]) == 64
@@ -131,3 +131,97 @@ def test_reject_non_log_upload(api_client, auth_headers) -> None:
         files={"file": ("notes.exe", b"not a log", "application/octet-stream")},
     )
     assert response.status_code == 400
+
+
+def test_dynamic_job_persists_chunks(api_client, auth_headers) -> None:
+    with SAMPLE_LOG.open("rb") as fh:
+        uploaded = api_client.post(
+            "/api/datasets",
+            headers=auth_headers,
+            files={"file": ("synth_small.log", fh, "text/plain")},
+        )
+    dataset_id = uploaded.json()["id"]
+    created = api_client.post(
+        "/api/jobs",
+        headers=auth_headers,
+        json={
+            "dataset_id": dataset_id,
+            "mode": "parallel",
+            "workers": 2,
+            "execution_backend": "dynamic",
+            "chunks_per_worker": 4,
+        },
+    )
+    assert created.status_code == 201, created.text
+    job_id = created.json()["job_id"]
+    job = _wait_job(api_client, auth_headers, job_id)
+    assert job["status"] == "completed", job
+    assert job["execution_backend"] == "dynamic"
+    assert job["chunks_per_worker"] == 4
+    results = api_client.get(f"/api/jobs/{job_id}/results", headers=auth_headers)
+    assert results.status_code == 200
+    body = results.json()
+    assert body["execution_backend"] == "dynamic"
+    assert body["chunks_per_worker"] == 4
+    assert body["summary"]["records_processed"] > 0
+
+
+def test_benchmark_process_backend_selector(api_client, auth_headers) -> None:
+    with SAMPLE_LOG.open("rb") as fh:
+        uploaded = api_client.post(
+            "/api/datasets",
+            headers=auth_headers,
+            files={"file": ("synth_small.log", fh, "text/plain")},
+        )
+    dataset_id = uploaded.json()["id"]
+    created = api_client.post(
+        "/api/benchmarks",
+        headers=auth_headers,
+        json={
+            "dataset_id": dataset_id,
+            "workers": [1, 2],
+            "runs": 1,
+            "execution_backend": "process",
+        },
+    )
+    assert created.status_code == 201, created.text
+    job_id = created.json()["job_id"]
+    job = _wait_job(api_client, auth_headers, job_id)
+    assert job["status"] == "completed", job
+    assert job["execution_backend"] in ("process", "local_process")
+    bench = api_client.get(f"/api/benchmarks/{job_id}", headers=auth_headers)
+    assert bench.status_code == 200
+    assert len(bench.json()["rows"]) == 2
+
+
+def test_benchmark_rejects_unavailable_backend(api_client, auth_headers, monkeypatch) -> None:
+    from app.api import benchmarks as benchmarks_api
+    from app.execution import registry
+
+    real_status = registry.backend_status
+
+    def fake_status():
+        status = real_status()
+        status["openmp"] = {"available": False, "detail": "forced unavailable for test"}
+        return status
+
+    monkeypatch.setattr(benchmarks_api, "backend_status", fake_status)
+    with SAMPLE_LOG.open("rb") as fh:
+        uploaded = api_client.post(
+            "/api/datasets",
+            headers=auth_headers,
+            files={"file": ("synth_small.log", fh, "text/plain")},
+        )
+    dataset_id = uploaded.json()["id"]
+    created = api_client.post(
+        "/api/benchmarks",
+        headers=auth_headers,
+        json={
+            "dataset_id": dataset_id,
+            "workers": [1],
+            "runs": 1,
+            "execution_backend": "openmp",
+        },
+    )
+    assert created.status_code == 400
+    assert "unavailable" in created.json()["detail"].lower()

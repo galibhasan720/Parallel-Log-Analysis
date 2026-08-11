@@ -65,12 +65,57 @@ Sequential profiles on **synth_100mb** (warm-up discarded, 3 runs, Day 4).
 
 ## Stretch experiments
 
-- B: static vs dynamic scheduling — not run (Stage 1 uses static chunks)
-- C: chunk granularity — not run
+- B: static vs dynamic scheduling — **run** (Stage 2; see backend compare on synth_10mb)
+- C: chunk granularity — not run as a separate matrix (dynamic uses `chunks_per_worker=8`)
 - D: parser optimization — not run
 - E: aggregation strategy — not run
-- Weak scaling (1w→100 MB, 2w→200 MB, …) — **not run** (no 200/400/800 MB files generated)
+- Weak scaling — **run** (Stage 2): ~50 MB work per worker
+
+## Stage 2 — Weak scaling (process backend)
+
+**Rule:** ~50 MB per worker · warm-up + 2 timed runs · 2026-08-10 UTC  
+Ideal weak scaling keeps wall-clock ≈ \(T_1\) as both problem size and \(p\) grow. Efficiency here is reported as \(T_1 / T_p\) (same wall-clock ⇒ efficiency 1).
+
+| Workers \(p\) | File | Mean s | \(T_1/T_p\) |
+| ------------- | ---- | ------ | ----------- |
+| 1 | synth_50mb | 4.552 | 1.00 |
+| 2 | synth_100mb | 17.121 | 0.27 |
+| 4 | synth_200mb | 20.028 | 0.23 |
+
+Interpretation: wall-clock rises with size; ProcessPool spawn + hybrid P/E keep weak efficiency low on this laptop. Still a valid measured weak-scaling experiment for the report.
+
+## Stage 2 — Backend comparison (synth_10mb)
+
+**Measured:** 2026-08-10 UTC · i5-1235U · 2 timed runs after warm-up · file `synth_10mb.log` (10 485 804 bytes).  
+**Summary JSON:** `benchmarks/results/backend_compare_synth_10mb_20260810T213535Z.json`
+
+| Backend | p=1 mean s | Best p | Best mean s | Best \(S_p\) | Best \(E_p\) |
+| ------- | ---------- | ------ | ----------- | ------------ | ------------ |
+| process (static ProcessPool) | 0.876 | 4 | 0.665 | 1.32 | 0.33 |
+| dynamic (many chunks) | 1.076 | 4 | 0.921 | 1.17 | 0.29 |
+| openmp (native `#pragma omp`) | 1.186 | 8 | 0.516 | 2.30 | 0.29 |
+| mpi (mpi4py + MS-MPI, single node) | 2.359 | 4 | 1.445 | 1.63 | 0.41 |
+
+Notes:
+
+- **10 MB is small** for ProcessPool (spawn overhead dominates at p=8). Prefer 100 MB tables above for process scaling claims.
+- **OpenMP** shows the best wall-clock on this small file (shared-memory threads, no process spawn).
+- **MPI** pays launch/`mpiexec` overhead on Windows; still demonstrates distributed-memory programming with correct aggregates.
+- Parity: sequential ≡ process ≡ dynamic ≡ openmp ≡ mpi on `synth_small.log` (`pytest`).
+
+### Experiment B detail (process static vs dynamic, synth_10mb)
+
+| Workers | Static mean s | Dynamic mean s |
+| ------- | ------------- | -------------- |
+| 1 | 0.876 | 1.076 |
+| 2 | 0.818 | 1.095 |
+| 4 | 0.665 | 0.921 |
+| 8 | 0.966 | 1.043 |
+
+On this size, static wins; dynamic is for load-imbalance teaching and larger/irregular files.
 
 ## Discussion
 
 Bottleneck is **CPU parse + histogram updates**, not NVMe read. The i5-1235U is a hybrid P/E U-series part (2P+8E, 12 threads): extra workers beyond ~6–8 share E-cores and SMT, so efficiency dropping toward 0.24–0.30 at 8 workers and ~0.15–0.21 at 12 is expected. On 100 MB, \(p=12\) lost to \(p=8\) (overhead > remaining work). On 500 MB, \(p=12\) still wins on mean wall-clock but with low efficiency. Peak RSS was not collected (no psutil); 12 GB RAM was enough to hold a 500 MB mapped file plus a small worker tree without swapping observed in the timed session.
+
+Stage 2 adds **multi-paradigm** evidence for CSE 471 (OpenMP weeks 5–7, MPI weeks 8–10) without CUDA (Iris Xe).

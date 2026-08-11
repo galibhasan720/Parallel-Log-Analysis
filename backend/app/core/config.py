@@ -23,7 +23,9 @@ class Settings:
     max_upload_bytes: int = 120 * 1024 * 1024
     max_workers: int = 12
     max_concurrent_jobs: int = 1
-    execution_backend: str = "local_process"
+    execution_backend: str = field(
+        default_factory=lambda: os.environ.get("EXECUTION_BACKEND", "process")
+    )
     parser_version: str = "application-1.0"
     analysis_version: str = "finalize-1.0"
     allowed_extensions: tuple[str, ...] = (".log", ".txt")

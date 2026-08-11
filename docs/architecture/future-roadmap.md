@@ -1,11 +1,12 @@
-# Future Roadmap (Do Not Build in 7 Days)
+# Future Roadmap
 
-Stage 1 is frozen at ≈20–25% of this vision. This document is a roadmap only — not a build list.
+Stage 1 delivered the local ProcessPool prototype (v1.0.0).  
+Stage 2 (this tree) adds OpenMP, single-node MPI, dynamic scheduling, directory input, and CSE 471 course alignment.
 
 ```text
-Stage 1  Local Offline HPC Prototype          ← current 7-day build
-Stage 2  Performance-Optimized Local Platform
-Stage 3  Distributed HPC Platform
+Stage 1  Local Offline HPC Prototype          ← v1.0.0
+Stage 2  Multi-paradigm CPU HPC (OpenMP/MPI)  ← current
+Stage 3  Multi-node Distributed HPC Platform
 Stage 4  Continuous / Real-Time Log Processing
 Stage 5  Production Observability Platform
 Stage 6  AI-Assisted Incident Intelligence

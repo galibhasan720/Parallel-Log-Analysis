@@ -128,7 +128,64 @@ Ollama (already pulled Day 1): `llama3.2:3b` on `http://127.0.0.1:11434`. Overri
 
 **Benchmark hygiene:** stop Vite + Ollama during official HPC timed runs (`run_benchmarks.py`).
 
-## Day 7 — Backup (before faculty demo)
+## Stage 2 — Multi-paradigm backends (CSE 471)
+
+| Backend | Runtime | Build / install |
+| ------- | ------- | --------------- |
+| `process` | Python `ProcessPoolExecutor` | Default (always) |
+| `dynamic` | ProcessPool + many small chunks | Default |
+| `mpi` | `mpi4py` + `mpiexec` | Windows: Microsoft MPI + `pip install mpi4py`. WSL: `sudo apt install openmpi-bin libopenmpi-dev` then `pip install mpi4py` |
+| `openmp` | Native C + OpenMP | `cd native/openmp_worker && make` (Linux/WSL) or `make dll` (MinGW on Windows). Set `OPENMP_WORKER_LIB` if needed. |
+
+CLI examples:
+
+```powershell
+$env:PYTHONPATH = "backend"
+python -m hpc_engine.analyze --input data/samples/synth_small.log --backend process --mode parallel --workers 4
+python -m hpc_engine.analyze --input data/samples/synth_small.log --backend dynamic --workers 4
+python -m hpc_engine.analyze --input data/samples/synth_small.log --backend openmp --workers 4
+mpiexec -n 4 python -m hpc_engine.analyze --backend mpi --input data/samples/synth_small.log --workers 4
+```
+
+Cluster-lite (bash / WSL):
+
+```bash
+chmod +x scripts/hpc/*.sh
+./scripts/hpc/submit_local.sh --input data/samples/synth_small.log --backend process --workers 4
+./scripts/hpc/run_job.sh <JOB_ID>
+./scripts/hpc/collect_results.sh
+```
+
+Course mapping: [docs/COURSE_ALIGNMENT.md](COURSE_ALIGNMENT.md). CUDA is intentionally out of scope on Iris Xe.
+
+### Job knobs (API + runner)
+
+`POST /api/jobs` and `POST /api/benchmarks` accept `execution_backend`, optional `schedule` (`static`|`dynamic`), and `chunks_per_worker` (1–64). Values persist on `log_jobs` and are passed into `ExecutionBackend.execute`. After schema changes, recreate the DB if needed:
+
+```powershell
+python backend/scripts/reset_db.py
+```
+
+### Directory input (CLI only)
+
+```powershell
+python -m hpc_engine.analyze --input-dir E:\datasets\log-intelligence\batch --backend process --workers 4
+```
+
+Web upload stays single-file. Directory merge is for HPC CLI demos and tests (`test_directory.py`).
+
+Benchmark compare:
+
+```powershell
+python backend/scripts/run_benchmarks.py --file E:\datasets\log-intelligence\generated\synth_100mb.log --profile compare --backends process,dynamic --workers 1,2,4,8 --runs 3
+```
+
+Weak scaling files:
+
+```powershell
+python backend/scripts/generate_synthetic_logs.py --weak-scaling
+```
+
 
 Do **not** commit `app.db` or large logs. Copy locally:
 

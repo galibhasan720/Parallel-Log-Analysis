@@ -1,4 +1,4 @@
-"""Analysis jobs: create, poll, cancel, results. HPC via LocalProcessBackend only."""
+"""Analysis jobs: create, poll, cancel, results via ExecutionBackend registry."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ from app.auth.deps import get_current_user
 from app.core.config import settings
 from app.db.models import Dataset, LogJob, User
 from app.db.session import get_db
+from app.execution.registry import normalize_backend_name
 from app.jobs.results import configuration_hash
 from app.jobs.runner import enqueue_analysis, request_cancel
 
@@ -33,6 +34,8 @@ def _job_out(job: LogJob) -> JobStatusOut:
         processing_mode=job.processing_mode,
         worker_count=job.worker_count,
         execution_backend=job.execution_backend,
+        schedule=job.schedule,
+        chunks_per_worker=job.chunks_per_worker,
         parser_version=job.parser_version,
         analysis_version=job.analysis_version,
         configuration_hash=job.configuration_hash,
@@ -56,6 +59,15 @@ def create_job(
         raise HTTPException(status_code=400, detail=f"workers must be 1..{settings.max_workers}")
     if mode == "sequential":
         workers = 1
+    try:
+        backend = normalize_backend_name(body.execution_backend or settings.execution_backend)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    schedule = (body.schedule or "static").lower().strip()
+    if schedule not in ("static", "dynamic"):
+        raise HTTPException(status_code=400, detail="schedule must be static or dynamic")
+    if backend == "process" and schedule == "dynamic":
+        backend = "dynamic"
     dataset = db.get(Dataset, body.dataset_id)
     if dataset is None or dataset.user_id != user.id:
         raise HTTPException(status_code=404, detail="Dataset not found")
@@ -63,16 +75,28 @@ def create_job(
     if fmt == "auto":
         fmt = "application"
     dataset.format = fmt
+    chunks = body.chunks_per_worker
+    if chunks is not None and (chunks < 1 or chunks > 64):
+        raise HTTPException(status_code=400, detail="chunks_per_worker must be 1..64")
     job = LogJob(
         user_id=user.id,
         dataset_id=dataset.id,
         status="queued",
         processing_mode=mode,
         worker_count=workers,
-        execution_backend=settings.execution_backend,
+        execution_backend=backend,
+        schedule=schedule,
+        chunks_per_worker=chunks,
         parser_version=settings.parser_version,
         analysis_version=settings.analysis_version,
-        configuration_hash=configuration_hash(mode=mode, workers=workers, fmt=fmt),
+        configuration_hash=configuration_hash(
+            mode=mode,
+            workers=workers,
+            fmt=fmt,
+            backend=backend,
+            schedule=schedule,
+            chunks_per_worker=chunks,
+        ),
     )
     db.add(job)
     db.commit()
@@ -144,6 +168,8 @@ def get_results(
         evidence=result.evidence_json or {},
         ai_report=result.ai_report,
         execution_backend=job.execution_backend,
+        schedule=job.schedule,
+        chunks_per_worker=job.chunks_per_worker,
         parser_version=job.parser_version,
         analysis_version=job.analysis_version,
         configuration_hash=job.configuration_hash,
