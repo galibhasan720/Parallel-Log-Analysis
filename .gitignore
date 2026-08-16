@@ -44,6 +44,11 @@ Thumbs.db
 .vscode/
 *.swp
 
+# Office lock files / local binaries
+~$*
+native/openmp_worker/*.dll
+native/openmp_worker/analysis-report.txt
+
 # Coverage / local logs (keep committed sample)
 .coverage
 htmlcov/
